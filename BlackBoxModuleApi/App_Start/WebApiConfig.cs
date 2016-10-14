@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using BlackBoxModuleApi.App_Start;
+using SimpleInjector.Integration.WebApi;
 using System.Web.Http;
 
 namespace BlackBoxModuleApi

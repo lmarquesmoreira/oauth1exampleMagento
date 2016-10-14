@@ -5,6 +5,8 @@ using System.Web;
 using System.Web.Http;
 using System.Web.Routing;
 using Microsoft.ApplicationInsights;
+using SimpleInjector.Integration.WebApi;
+using BlackBoxModuleApi.App_Start;
 
 namespace BlackBoxModuleApi
 {
@@ -15,6 +17,10 @@ namespace BlackBoxModuleApi
         protected void Application_Start()
         {
             GlobalConfiguration.Configure(WebApiConfig.Register);
+
+            var container = ContainerConfig.Create();
+            GlobalConfiguration.Configuration.DependencyResolver =
+                new SimpleInjectorWebApiDependencyResolver(container);
         }
 
         protected void Application_Error(object sender, EventArgs e)

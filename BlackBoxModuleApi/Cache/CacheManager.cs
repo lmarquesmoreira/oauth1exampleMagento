@@ -5,10 +5,16 @@ using System.Configuration;
 
 namespace BlackBoxModuleApi.Cache
 {
-    public class CacheManager
+
+    public class CacheManager : ICacheManager
     {
 
-        private readonly IDatabase cache;
+        protected readonly IDatabase Cache;
+
+        public CacheManager()
+        {
+            Cache = Connection.GetDatabase();
+        }
 
         private static Lazy<ConnectionMultiplexer> lazyConnection = new Lazy<ConnectionMultiplexer>(() =>
         {
@@ -24,19 +30,14 @@ namespace BlackBoxModuleApi.Cache
             }
         }
 
-        public CacheManager()
-        {
-            cache = Connection.GetDatabase();
-        }
-
         public void Set<T>(string key, T data)
         {
-            cache.StringSet(key, JsonConvert.SerializeObject(data));
+            Cache.StringSet(key, JsonConvert.SerializeObject(data));
         }
 
         public T Get<T>(string key)
         {
-            return JsonConvert.DeserializeObject<T>(cache.StringGet(key));
+            return JsonConvert.DeserializeObject<T>(Cache.StringGet(key));
         }
 
     }

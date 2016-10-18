@@ -29,7 +29,7 @@ namespace BlackBoxModuleApi.Controllers
 
         [Route("CheckLogin")]
         [HttpPost]
-        public async Task<HttpResponseMessage> CheckLogin([FromUri]AuthorizeDataRequest data) => await Service.CheckLogin(data);
+        public HttpResponseMessage CheckLogin([FromUri]AuthorizeDataRequest data) => Service.CheckLogin(data);
 
     }
 }

@@ -12,6 +12,6 @@ namespace BlackBoxModuleApi.Services
 
         HttpResponseMessage Authorize(AuthorizeDataRequest data);
 
-        Task<HttpResponseMessage> CheckLogin(AuthorizeDataRequest data);
+        HttpResponseMessage CheckLogin(AuthorizeDataRequest data);
     }
 }

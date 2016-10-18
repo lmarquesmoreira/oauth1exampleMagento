@@ -10,6 +10,8 @@ using System.Net.Http.Headers;
 using System.Configuration;
 using System.Collections.Generic;
 using System.Web;
+using RestSharp;
+using RestSharp.Authenticators;
 
 namespace BlackBoxModuleApi.Services
 {
@@ -41,53 +43,34 @@ namespace BlackBoxModuleApi.Services
             return response;
         }
 
-        public async Task<HttpResponseMessage> CheckLogin(AuthorizeDataRequest data)
+        public HttpResponseMessage CheckLogin(AuthorizeDataRequest data)
         {
+
             //suponha que os dados do login estão corretos...
             try
             {
-                if (data.oauth_consumer_key != null || data.success_call_back != null)
+                Trace.TraceInformation($"[STARTING_TOKENS]");
+
+
+                Trace.TraceInformation($"[STARTING_GET_REQUEST_TOKEN]");
+                var requestToken = GetRequestToken();
+                if (requestToken != null)
                 {
-                    Trace.TraceInformation($"[AuthorizeDataRequest] => key: {data.oauth_consumer_key}; callback: {data.success_call_back}");
-                }
+                    Trace.TraceInformation($"[REQUEST_TOKEN] => token: {requestToken.oauth_token} - secret: {requestToken.oauth_token_secret}");
 
-                var model = Cache.Get<EndpointDataRequest>("OAuthConsumerKey");
+                    var accessToken = GetAccessToken(requestToken);
 
-                Trace.TraceInformation($"[RequestToken_EndpoindDataRequest] => key: {model.oauth_consumer_key}; secret: {model.oauth_consumer_key_secret}");
-
-                Trace.TraceInformation($"[store_base_url] => {model.store_base_url}");
-
-                var url = model.store_base_url + "oauth/token/request/";
-                var timestamp = OAuthParams.GenerateTimeStamp();
-                var nonce = Guid.NewGuid().ToString();
-
-                OAuthParams oauth = new OAuthParams(model.oauth_consumer_key, model.oauth_consumer_key_secret);
-                var signature = oauth.GenerateSignature(nonce, timestamp, new Uri(model.store_base_url));
-
-                Trace.TraceInformation($"[Signature] => {signature}");
-
-                // Get RequestToken
-                using (var client = new HttpClient())
-                {
-                    var authorize = $"OAuth oauth_consumer_key=\"{model.oauth_consumer_key}\", oauth_nonce=\"{nonce}\", oauth_signature=\"{signature}\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"{timestamp}\", oauth_version=\"1.0\"";
-
-                    Trace.TraceInformation($"[Authorization] => {authorize}");
-                    try
+                    if (accessToken != null)
                     {
-                        client.DefaultRequestHeaders.Add("Authorization", authorize);
-                        var response = await client.PostAsJsonAsync($"{url}", "");
-                        var s = await response.Content.ReadAsStringAsync();
-                        Trace.TraceInformation($"[ResquestTokenResponse] => {s}");
+                        Trace.TraceInformation($"[ACCESS_TOKEN] => token: {requestToken.oauth_token} - secret: {requestToken.oauth_token_secret}");
+
+                        return new HttpResponseMessage(HttpStatusCode.OK);
                     }
-                    catch (Exception e)
-                    {
-                        Trace.TraceError($"[ResquestTokenResponse] => {e.Message}");
-                        Trace.TraceError($"[ResquestTokenResponse] => {e.StackTrace}");
-                    }
+                    else
+                        return new HttpResponseMessage(HttpStatusCode.InternalServerError);
                 }
-
-
-                // Get AccessToken
+                else
+                    return new HttpResponseMessage(HttpStatusCode.InternalServerError);
 
             }
             catch (Exception e)
@@ -96,7 +79,7 @@ namespace BlackBoxModuleApi.Services
                 Trace.TraceError($"[RequestToken] => {e.StackTrace}");
             }
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            return new HttpResponseMessage(HttpStatusCode.InternalServerError);
         }
 
         public async Task<HttpResponseMessage> Endpoint(HttpContent content)
@@ -114,7 +97,7 @@ namespace BlackBoxModuleApi.Services
 
                 try
                 {
-                    
+
                     var rTrace = "[Endpoint_RESPONSE] => ";
                     foreach (string key in data)
                         rTrace += $" {key} : {data[key]} ";
@@ -128,7 +111,7 @@ namespace BlackBoxModuleApi.Services
                 }
                 catch (Exception e)
                 {
-                    Trace.TraceError($"[OAUTH_TOKEN] => não existe token");
+                    Trace.TraceError($"[OAUTH_TOKEN] => não existe token - {e.Message}");
                 }
 
                 Trace.TraceInformation($"Body Data : {model.oauth_consumer_key} \n,  {model.oauth_consumer_key_secret} \n,  {model.oauth_verifier} \n,  {model.store_base_url}");
@@ -144,6 +127,85 @@ namespace BlackBoxModuleApi.Services
 
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }
+        }
+
+        private Token GetRequestToken()
+        {
+            var model = Cache.Get<EndpointDataRequest>("OAuthConsumerKey");
+
+            var client = new RestClient("http://blackboxmagento.centralus.cloudapp.azure.com")
+            {
+                Authenticator = OAuth1Authenticator.ForRequestToken(model.oauth_consumer_key, model.oauth_consumer_key_secret)
+            };
+
+            var request = new RestRequest(method: Method.POST, resource: "/oauth/token/request/");
+            try
+            {
+                var response = client.Execute(request);
+                if (response.ResponseStatus == ResponseStatus.Error)
+                    Trace.TraceError($"[REST_REQUEST_TOKEN_ERROR] => {response.ErrorMessage}");
+                else
+                {
+                    var token = Generate(response.Content);
+
+                    Cache.Set("OAuthToken", token);
+                    Trace.TraceInformation($"[REST_REQUEST_TOKEN_DATA] => {response.Content}");
+                    return token;
+                }
+
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError($"[REST_REQUEST_TOKEN_ERROR] => {e.Message}");
+            }
+
+            return null;
+        }
+
+        private Token GetAccessToken(Token requestToken)
+        {
+            var model = Cache.Get<EndpointDataRequest>("OAuthConsumerKey");
+
+            var client = new RestClient("http://blackboxmagento.centralus.cloudapp.azure.com")
+            {
+                Authenticator = OAuth1Authenticator.ForAccessToken(model.oauth_consumer_key, model.oauth_consumer_key_secret, requestToken.oauth_token, requestToken.oauth_token_secret, model.oauth_verifier)
+            };
+
+            var request = new RestRequest(method: Method.POST, resource: "/oauth/token/access/");
+
+            try
+            {
+                var response = client.Execute(request);
+                if (response.ResponseStatus == ResponseStatus.Error)
+                    Trace.TraceError($"[ACCESS_TOKEN_ERROR] => {response.ErrorMessage}");
+                else
+                {
+                    Trace.TraceInformation($"[REST_ACCESS_TOKEN_DATA] => {response.Content}");
+                    var token = Generate(response.Content);
+                    Cache.Set("OAuthAccessToken", token);
+                    return token;
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError($"[REST_ACCESS_TOKEN_ERROR] => {e.Message}");
+            }
+            return null;
+        }
+
+        public static Token Generate(string queryString)
+        {
+            var token = new Token();
+
+            var s = queryString.Split('&');
+
+            var otoken = s[0].Split('=');
+            var osecret = s[1].Split('=');
+
+            token.oauth_token = otoken[1];
+            token.oauth_token_secret = osecret[1];
+
+            return token;
         }
     }
 }

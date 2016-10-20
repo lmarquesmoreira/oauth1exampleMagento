@@ -182,6 +182,7 @@
     <Compile Include="Models\AuthorizeDataRequest.cs" />
     <Compile Include="Models\EndpointDataRequest.cs" />
     <Compile Include="Models\OAuthParams.cs" />
+    <Compile Include="Models\Magento\Order.cs" />
     <Compile Include="Models\Token.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\IMagentoService.cs" />

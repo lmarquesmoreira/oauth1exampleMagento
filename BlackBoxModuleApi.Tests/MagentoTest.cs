@@ -79,29 +79,96 @@ namespace BlackBoxModuleApi.Tests
             Assert.IsTrue(response);
         }
 
+        [TestMethod]
+        public void Get_Product_By_SKU_Cannot_Return_Error()
+        {
+            var result = GetProduct("123456").Result;
+            Assert.IsTrue(result != null);
+        }
+
+        private async Task<CatalogDataProduct> GetProduct(string sku)
+        {
+            var request = new RestRequest
+            {
+                Resource = $"rest/V1/products/{sku}",
+                Method = Method.POST,
+                RequestFormat = DataFormat.Json
+            };
+
+            var response = await Client.ExecuteGetTaskAsync<CatalogDataProduct>(request);
+            return response.Data;
+        }
+
         private async Task<bool> PostOrders()
         {
+
+            var product = await GetProduct("123456");
+
+            var sendAddress = new SalesDataOrderAddress()
+            {
+                country_id = "BR",
+                city = "Rio de Janeiro",
+                street = new List<string>() {
+                            "Estrada Intendente"
+                        },
+                postcode = "21341-331",
+                region = "Brazil",
+                region_id = 502,
+                firstname = "Lucas",
+                middlename = "Marques",
+                lastname = "Moreira",
+                email = "lmmoreira@braspag.com.br",
+                telephone = "(24)98826-3696",
+            };
+
             var entity = new InlineModel()
             {
                 entity = new SalesDataOrder()
                 {
-                    
-                    base_grand_total = 20,
+                    base_grand_total = 30,
+                    customer_id = 1,
                     customer_email = "lmmoreira@braspag.com.br",
-                    grand_total = 20,
+                    customer_firstname = "Lucas",
+                    customer_middlename = "Marques",
+                    customer_lastname = "Moreira",
+                    status = "processing",
+                    state = "processing",
+                    email_sent = 0,
+                    base_currency_code = "BRL",
+                    global_currency_code = "BRL",
+                    store_currency_code = "BRL",
+                    subtotal = 30,
+                    grand_total = 30,
                     items = new List<SalesDataOrderItem>()
                     {
                         new SalesDataOrderItem()
                         {
-                            sku = "123456"
+                           sku = product.sku,
+                           item_id = product.id,
+                           price = product.price,
+                           product_id = product.id,
+                           product_type = product.type_id
                         }
                     },
                     payment = new SalesDataOrderPayment()
                     {
                         account_status = "Approved",
-                        additional_information = new List<string>() { "Approved", "BlackBox"},
                         cc_last4 = "1111",
                         method = "banktransfer"
+                    },
+                    billing_address = sendAddress,
+                    extension_attributes = new SalesDataOrderExtension()
+                    {
+                        shipping_assignments = new List<SalesDataShippingAssignment>()
+                        {
+                           new SalesDataShippingAssignment()
+                           {
+                               shipping = new SalesDataShipping()
+                               {
+                                   address = sendAddress
+                               }
+                           }
+                        }
                     }
                 }
             };
@@ -122,20 +189,9 @@ namespace BlackBoxModuleApi.Tests
 
             var response = await Client.ExecutePostTaskAsync(request);
 
-
-            //using (HttpClient client = new HttpClient())
-            //{
-            //    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessTokenKey}");
-            //    var response = await client.PostAsJsonAsync("http://blackboxmagento.centralus.cloudapp.azure.com/rest/V1/orders", entity);
-
-            //    var res = await response.Content.ReadAsStringAsync();
-
-            //    if (response.IsSuccessStatusCode)
-            //        return true;
-            //    else
-            //        return false;
-            //}
-            return true;
+            if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Created)
+                return true;
+            return false;
         }
 
 

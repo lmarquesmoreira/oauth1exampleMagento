@@ -1,5 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using Magento.RestApi.Json;
+using Newtonsoft.Json;
 using System.Collections.Generic;
+using System;
 
 namespace BlackBoxModuleApi.Models.Magento
 {
@@ -408,7 +410,7 @@ namespace BlackBoxModuleApi.Models.Magento
         public string x_forwarded_for { get; set; }
 
         [JsonProperty("items", Required = Required.Always)]
-        public IList<SalesDataOrderItem> items { get; set; }
+        public List<SalesDataOrderItem> items { get; set; }
 
         [JsonProperty("billing_address", Required = Required.Default)]
         public SalesDataOrderAddress billing_address { get; set; }
@@ -417,7 +419,7 @@ namespace BlackBoxModuleApi.Models.Magento
         public SalesDataOrderPayment payment { get; set; }
 
         [JsonProperty("status_histories", Required = Required.Default)]
-        public IList<SalesDataOrderStatusHistory> status_histories { get; set; }
+        public List<SalesDataOrderStatusHistory> status_histories { get; set; }
 
         [JsonProperty("extension_attributes", Required = Required.Default)]
         public SalesDataOrderExtension extension_attributes { get; set; }
@@ -609,7 +611,7 @@ namespace BlackBoxModuleApi.Models.Magento
         public int parent_item_id { get; set; }
 
         [JsonProperty("price", Required = Required.Default)]
-        public int price { get; set; }
+        public decimal price { get; set; }
 
         [JsonProperty("price_incl_tax", Required = Required.Default)]
         public decimal price_incl_tax { get; set; }
@@ -805,7 +807,7 @@ namespace BlackBoxModuleApi.Models.Magento
         public string additional_data { get; set; }
 
         [JsonProperty("additional_information", Required = Required.Always)]
-        public IList<string> additional_information { get; set; }
+        public List<string> additional_information { get; }
 
         [JsonProperty("address_status", Required = Required.Default)]
         public string address_status { get; set; }
@@ -999,16 +1001,16 @@ namespace BlackBoxModuleApi.Models.Magento
     {
 
         [JsonProperty("shipping_assignments", Required = Required.Default)]
-        public IList<SalesDataShippingAssignment> shipping_assignments { get; set; }
+        public List<SalesDataShippingAssignment> shipping_assignments { get; set; }
 
         [JsonProperty("gift_message", Required = Required.Default)]
         public GiftMessageDataMessage gift_message { get; set; }
 
         [JsonProperty("applied_taxes", Required = Required.Default)]
-        public IList<TaxDataOrderTaxDetailsAppliedTax> applied_taxes { get; set; }
+        public List<TaxDataOrderTaxDetailsAppliedTax> applied_taxes { get; set; }
 
         [JsonProperty("item_applied_taxes", Required = Required.Default)]
-        public IList<TaxDataOrderTaxDetailsItem> item_applied_taxes { get; set; }
+        public List<TaxDataOrderTaxDetailsItem> item_applied_taxes { get; set; }
 
         [JsonProperty("converting_from_quote", Required = Required.Default)]
         public bool converting_from_quote { get; set; }
@@ -1042,7 +1044,7 @@ namespace BlackBoxModuleApi.Models.Magento
         public SalesDataShipping shipping { get; set; }
 
         [JsonProperty("items", Required = Required.Always)]
-        public IList<SalesDataOrderItem> items { get; set; }
+        public List<SalesDataOrderItem> items { get; set; }
 
         [JsonProperty("stock_id", Required = Required.Default)]
         public int stock_id { get; set; }
@@ -1109,7 +1111,7 @@ namespace BlackBoxModuleApi.Models.Magento
         public int associated_item_id { get; set; }
 
         [JsonProperty("applied_taxes", Required = Required.Default)]
-        public IList<TaxDataOrderTaxDetailsAppliedTax> applied_taxes { get; set; }
+        public List<TaxDataOrderTaxDetailsAppliedTax> applied_taxes { get; set; }
 
         [JsonProperty("extension_attributes", Required = Required.Default)]
         public TaxDataOrderTaxDetailsItemExtension extension_attributes { get; set; }
@@ -1120,16 +1122,16 @@ namespace BlackBoxModuleApi.Models.Magento
     {
 
         [JsonProperty("custom_options", Required = Required.Default)]
-        public IList<CatalogDataCustomOption> custom_options { get; set; }
+        public List<CatalogDataCustomOption> custom_options { get; set; }
 
         [JsonProperty("bundle_options", Required = Required.Default)]
-        public IList<BundleDataBundleOption> bundle_options { get; set; }
+        public List<BundleDataBundleOption> bundle_options { get; set; }
 
         [JsonProperty("downloadable_option", Required = Required.Default)]
         public DownloadableDataDownloadableOption downloadable_option { get; set; }
 
         [JsonProperty("configurable_item_options", Required = Required.Default)]
-        public IList<ConfigurableProductDataConfigurableItemOptionValue> configurable_item_options { get; set; }
+        public List<ConfigurableProductDataConfigurableItemOptionValue> configurable_item_options { get; set; }
 
     }
 
@@ -1200,7 +1202,7 @@ namespace BlackBoxModuleApi.Models.Magento
     public class TaxDataOrderTaxDetailsAppliedTaxExtension
     {
         [JsonProperty("rates", Required = Required.Default)]
-        public IList<TaxDataAppliedTaxRate> rates { get; set; }
+        public List<TaxDataAppliedTaxRate> rates { get; set; }
     }
 
     public class TaxDataOrderTaxDetailsItemExtension { }
@@ -1228,7 +1230,7 @@ namespace BlackBoxModuleApi.Models.Magento
         public int option_qty { get; set; }
 
         [JsonProperty("option_selections", Required = Required.Always)]
-        public IList<int> option_selections { get; set; }
+        public List<int> option_selections { get; set; }
 
         [JsonProperty("extension_attributes", Required = Required.Default)]
         public BundleDataBundleOptionExtension extension_attributes { get; set; }
@@ -1238,7 +1240,7 @@ namespace BlackBoxModuleApi.Models.Magento
     {
 
         [JsonProperty("downloadable_links", Required = Required.Always)]
-        public IList<int> downloadable_links { get; set; }
+        public List<int> downloadable_links { get; set; }
     }
 
     public class ConfigurableProductDataConfigurableItemOptionValue
@@ -1361,5 +1363,337 @@ namespace BlackBoxModuleApi.Models.Magento
         [JsonProperty("name", Required = Required.Always)]
         public string name { get; set; }
     }
+
+    public class CatalogDataProduct
+    {
+        [JsonProperty("id", Required = Required.Default)]
+        public int id { get; set; }
+
+        [JsonProperty("sku", Required = Required.Always)]
+        public string sku { get; set; }
+
+        [JsonProperty("name", Required = Required.Default)]
+        public string name { get; set; }
+
+        [JsonProperty("attribute_set_id", Required = Required.Default)]
+        public int attribute_set_id { get; set; }
+
+        [JsonProperty("price", Required = Required.Default)]
+        public decimal price { get; set; }
+
+        [JsonProperty("status", Required = Required.Default)]
+        public int status { get; set; }
+
+        [JsonProperty("visibility", Required = Required.Default)]
+        public int visibility { get; set; }
+
+        [JsonProperty("file_info", Required = Required.Default)]
+        public string type_id { get; set; }
+
+        [JsonProperty("created_at", Required = Required.Default)]
+        public string created_at { get; set; }
+
+        [JsonProperty("updated_at", Required = Required.Default)]
+        public string updated_at { get; set; }
+
+        [JsonProperty("weight", Required = Required.Default)]
+        public decimal weight { get; set; }
+
+        [JsonProperty("extension_attributes", Required = Required.Default)]
+        public CatalogDataProductExtension extension_attributes { get; set; }
+
+        [JsonProperty("product_links", Required = Required.Default)]
+        public List<CatalogDataProductLink> product_links { get; set; }
+
+        [JsonProperty("options", Required = Required.Default)]
+        public List<CatalogDataProductCustomOption> options { get; set; }
+
+        [JsonProperty("media_gallery_entries", Required = Required.Default)]
+        public List<CatalogDataProductAttributeMediaGalleryEntry> media_gallery_entries { get; set; }
+
+        [JsonProperty("tier_prices", Required = Required.Default)]
+        public List<CatalogDataProductTierPrice> tier_prices { get; set; }
+
+        [JsonProperty("custom_attributes", Required = Required.Default)]
+        public List<FrameworkAttribute> custom_attributes { get; set; }
+    }
+
+    public class CatalogDataProductExtension
+    {
+        [JsonProperty("bundle_product_options", Required = Required.Default)]
+        public List<BundleDataOption> bundle_product_options { get; set; }
+
+        [JsonProperty("downloadable_products_links", Required = Required.Default)]
+        public List<DownloadableDataLink> downloadable_products_links { get; set; }
+
+        [JsonProperty("downloadable_product_samples", Required = Required.Default)]
+        public List<DownloadableDataSample> downloadable_product_samples { get; set; }
+
+        [JsonProperty("stock_item", Required = Required.Default)]
+        public CatalogInventoryDataStockItem stock_item { get; set; }
+
+        [JsonProperty("configurable_product_options", Required = Required.Default)]
+        public List<ConfigurableProductDataOption> configurable_product_options { get; set; }
+
+        [JsonProperty("configurable_product_links", Required = Required.Default)]
+        public List<int> configurable_product_links { get; set; }
+    }
+
+    public class CatalogDataProductLink
+    {
+        [JsonProperty("sku", Required = Required.Always)]
+        public string sku { get; set; }
+
+        [JsonProperty("link_type", Required = Required.Always)]
+        public string link_type { get; set; }
+
+        [JsonProperty("linked_product_sku", Required = Required.Always)]
+        public string linked_product_sku { get; set; }
+
+        [JsonProperty("linked_product_type", Required = Required.Always)]
+        public string linked_product_type { get; set; }
+
+        [JsonProperty("position", Required = Required.Always)]
+        public int position { get; set; }
+
+        [JsonProperty("extension_attributes", Required = Required.Default)]
+        public CatalogDataProductLinkExtension extension_attributes { get; set; }
+    }
+
+    public class CatalogDataProductCustomOption
+    {
+        [JsonProperty("product_sku", Required = Required.Always)]
+        public string product_sku { get; set; }
+
+        [JsonProperty("option_id", Required = Required.Default)]
+        public int option_id { get; set; }
+
+        [JsonProperty("title", Required = Required.Always)]
+        public string title { get; set; }
+
+        [JsonProperty("type", Required = Required.Always)]
+        public string type { get; set; }
+
+        [JsonProperty("sort_order", Required = Required.Always)]
+        public int sort_order { get; set; }
+
+        [JsonProperty("is_require", Required = Required.Always)]
+        public bool is_require { get; set; }
+
+        [JsonProperty("price", Required = Required.Default)]
+        public decimal price { get; set; }
+
+        [JsonProperty("price_type", Required = Required.Default)]
+        public string price_type { get; set; }
+
+        [JsonProperty("sku", Required = Required.Default)]
+        public string sku { get; set; }
+
+        [JsonProperty("file_extension", Required = Required.Default)]
+        public string file_extension { get; set; }
+
+        [JsonProperty("max_characters", Required = Required.Default)]
+        public int max_characters { get; set; }
+
+        [JsonProperty("image_size_x", Required = Required.Default)]
+        public int image_size_x { get; set; }
+
+        [JsonProperty("image_size_y", Required = Required.Default)]
+        public int image_size_y { get; set; }
+
+        [JsonProperty("values", Required = Required.Default)]
+        public List<CatalogDataProductCustomOptionValues> values { get; set; }
+
+        [JsonProperty("extension_values", Required = Required.Default)]
+        public CatalogDataProductCustomOptionExtension extension_values { get; set; }
+
+    }
+
+    public class CatalogDataProductAttributeMediaGalleryEntry
+    {
+        public int id { get; set; }
+        public string media_type { get; set; }
+        public string label { get; set; }
+        public int position { get; set; }
+        public bool disabled { get; set; }
+        public List<string> types { get; set; }
+        public string file { get; set; }
+        public FrameworkDataImageContent content { get; set; }
+        public CatalogDataProductAttributeMediaGalleryEntryExtension extension_attributes { get; set; }
+    }
+
+    public class CatalogDataProductTierPrice
+    {
+        public int customer_group_id { get; set; }
+        public decimal qty { get; set; }
+        public decimal value { get; set; }
+        public CatalogDataProductTierPriceExtension extension_attributes { get; set; }
+    }
+
+    public class FrameworkAttribute
+    {
+        public string attribute_code { get; set; }
+        public object value { get; set; }
+    }
+
+    public class BundleDataOption
+    {
+        public int option_id { get; set; }
+        public string title { get; set; }
+        public bool required { get; set; }
+        public int position { get; set; }
+        public string sku { get; set; }
+        public List<BundleDataLink> product_links { get; set; }
+        public BundleDataOptionExtension extension_attributes { get; set; }
+    }
+
+    public class DownloadableDataLink
+    {
+        public int id { get; set; }
+        public string title { get; set; }
+        public int sort_order { get; set; }
+        public int is_shareable { get; set; }
+        public decimal price { get; set; }
+        public int number_of_downloads { get; set; }
+        public string link_type { get; set; }
+        public string link_file { get; set; }
+        public DownloadableDataFileContent link_file_content { get; set; }
+        public string link_url { get; set; }
+        public string sample_type { get; set; }
+        public string sample_file { get; set; }
+        public string sample_file_content { get; set; }
+        public string sample_url { get; set; }
+        public DownloadableDataLinkExtension extension_attributes { get; set; }
+    }
+
+    public class DownloadableDataSample
+    {
+        public int id { get; set; }
+        public string title { get; set; }
+        public int sort_order { get; set; }
+        public string sample_type { get; set; }
+        public string sample_file { get; set; }
+        public DownloadableDataFileContent sample_file_content { get; set; }
+        public string sample_url { get; set; }
+        public DownloadableDataSampleExtension extension_attributes { get; set; }
+    }
+
+    public class CatalogInventoryDataStockItem
+    {
+        public int item_id { get; set; }
+        public int product_id { get; set; }
+        public int stock_id { get; set; }
+        public decimal qty { get; set; }
+        public bool is_in_stock { get; set; }
+        public bool is_qty_decimal { get; set; }
+        public bool show_default_notification_message { get; set; }
+        public bool use_config_min_qty { get; set; }
+        public decimal min_qty { get; set; }
+        public int use_config_min_sale_qty { get; set; }
+        public decimal min_sale_qty { get; set; }
+        public bool use_config_max_sale_qty { get; set; }
+        public decimal max_sale_qty { get; set; }
+        public bool use_config_backorders { get; set; }
+        public int backorders { get; set; }
+        public bool use_config_notify_stock_qty { get; set; }
+        public decimal notify_stock_qty { get; set; }
+        public bool use_config_qty_increments { get; set; }
+        public bool use_config_enable_qty_inc { get; set; }
+        public bool enable_qty_increments { get; set; }
+        public bool use_config_manage_stock { get; set; }
+        public string low_stock_date { get; set; }
+        public bool is_decimal_divided { get; set; }
+        public int stock_status_changed_auto { get; set; }
+        public CatalogInventoryDataStockItemExtension extension_attributes
+        {
+            get; set;
+        }
+    }
+
+    public class ConfigurableProductDataOption
+    {
+        public int id { get; set; }
+        public string attribute_id { get; set; }
+        public string label { get; set; }
+        public int position { get; set; }
+        public bool is_use_default { get; set; }
+        public List<ConfigurableProductDataOptionValue> values { get; set; }
+        public ConfigurableProductDataOptionExtension extension_attributes { get; set; }
+        public int product_id { get; set; }
+    }
+
+    public class CatalogDataProductLinkExtension
+    {
+        public decimal qty { get; set; }
+    }
+    public class CatalogDataProductCustomOptionValues
+    {
+        public string title { get; set; }
+        public int sort_order { get; set; }
+        public decimal price { get; set; }
+        public string price_type { get; set; }
+        public string sku { get; set; }
+        public int option_type_id { get; set; }
+    }
+
+    public class CatalogDataProductCustomOptionExtension
+    {
+
+    }
+    public class CatalogDataProductAttributeMediaGalleryEntryExtension
+    {
+        public FrameworkDataVideoContent video_content { get; set; }
+    }
+
+    public class CatalogDataProductTierPriceExtension { }
+
+    public class BundleDataLink
+    {
+        public string id { get; set; }
+        public string sku { get; set; }
+        public int option_id { get; set; }
+        public decimal qty { get; set; }
+        public int position { get; set; }
+        public bool is_default { get; set; }
+        public decimal price { get; set; }
+        public int price_type { get; set; }
+        public int can_change_quantity { get; set; }
+        public BundleDataLinkExtension extension_attributes { get; set; }
+    }
+
+    public class BundleDataOptionExtension { }
+
+    public class DownloadableDataFileContent
+    {
+        public string file_data { get; set; }
+        public string name { get; set; }
+
+        public DownloadableDataFileContentExtension extension_attributes { get; set; }
+    }
+
+    public class DownloadableDataLinkExtension { }
+    public class DownloadableDataSampleExtension { }
+    public class CatalogInventoryDataStockItemExtension { }
+
+    public class ConfigurableProductDataOptionValue
+    {
+        public int value_index { get; set; }
+        public ConfigurableProductDataOptionValueExtension extension_attributes { get; set; }
+    }
+    public class ConfigurableProductDataOptionExtension { }
+    public class FrameworkDataVideoContent
+    {
+        public string media_type { get; set; }
+        public string video_provider { get; set; }
+        public string video_url { get; set; }
+        public string video_title { get; set; }
+        public string video_description { get; set; }
+        public string video_metadata { get; set; }
+
+    }
+
+    public class BundleDataLinkExtension { }
+    public class DownloadableDataFileContentExtension { }
+    public class ConfigurableProductDataOptionValueExtension { }
 
 }

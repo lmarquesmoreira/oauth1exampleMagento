@@ -80,10 +80,181 @@ namespace BlackBoxModuleApi.Tests
         }
 
         [TestMethod]
+        public void Put_Order_Cannot_Return_Error()
+        {
+            var response = PostOrders("rest/V1/orders", Method.PUT).Result;
+            Assert.IsTrue(response);
+        }
+
+        [TestMethod]
         public void Get_Product_By_SKU_Cannot_Return_Error()
         {
             var result = GetProduct("123456").Result;
             Assert.IsTrue(result != null);
+        }
+
+        [TestMethod]
+        public void Create_Guest_Cart_Cannot_Return_Error()
+        {
+            var result = Create_Guest_Cart();
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void Adding_Cart_Items_Cannot_Return_Error()
+        {
+            var result = Adding_Cart_Items().Result;
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod]
+        public void Send_Order_Cannot_Return_Error()
+        {
+            // Operações a serem executadas
+            // - Criar Carrinho
+            //      POST customer/:customerId/carts
+            // - Adicionar itens ao carrinho
+            //      POST carts/:cartId/items
+            // - Inserir Billing Address e marcar o mesmo, como endereço de entrega
+            //      POST carts/:cartId/billing-address
+            // - Enviar ordem informando o metodo de pagamento
+            //      PUT carts/:cartId/order
+            var customerId = "1";
+            var sku = "123456";
+            var cartId = string.Empty;
+            var aurl1 = $"rest/V1/customers/{customerId}/carts";
+
+            #region Create Cart
+            var createCartRequest = new RestRequest(resource: aurl1, method: Method.POST);
+            var cartResponse = Client.ExecutePostTaskAsync<string>(createCartRequest).Result;
+            Assert.AreEqual(cartResponse.StatusCode, HttpStatusCode.OK);
+            #endregion
+
+            cartId = cartResponse.Data;
+
+            var aurl2 = $"rest/V1/carts/{cartId}/items";
+            var aurl3 = $"rest/V1/carts/{cartId}/billing-address";
+            var aurl4 = $"rest/V1/carts/{cartId}/order";
+
+            #region Add Itens to Cart
+            var addItensRequest = new RestRequest(resource: aurl2, method: Method.POST);
+            var item = new
+            {
+                cartItem = new
+                {
+                    sku = sku,
+                    qty = 3,
+                    quote_id = cartId
+                }
+            };
+            var itensJson = JsonConvert.SerializeObject(item, Formatting.Indented, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+            addItensRequest.AddParameter("application/json; charset=utf-8", itensJson, ParameterType.RequestBody);
+            var addItensResponse = Client.ExecutePostTaskAsync(addItensRequest).Result;
+            Assert.AreEqual(addItensResponse.StatusCode, HttpStatusCode.OK);
+            #endregion
+
+            #region Set Billing-Address
+            var billingAddressRequest = new RestRequest(resource: aurl3, method: Method.POST);
+
+            var address = new
+            {
+                address = new
+                {
+                    region = "Rio de Janeiro",
+                    region_id = 502,
+                    region_code = "RJ",
+                    country_id = "BR",
+                    street = new List<string>() { "Endereço maneiro" },
+                    telephone = "2222222222",
+                    postcode = "2222222",
+                    city = "Cidade Maneira",
+                    firstname = "Lucas",
+                    lastname = "Marques",
+                    customer_id = 1,
+                    email = "lmarquesmoreira@outlook.com",
+                    customer_address_id = 1
+                },
+                useForShipping = true
+            };
+
+            var addressJson = JsonConvert.SerializeObject(address, Formatting.Indented, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+
+            billingAddressRequest.AddParameter("application/json; charset=utf-8", addressJson, ParameterType.RequestBody);
+            var billingAddressResponse = Client.ExecutePostTaskAsync(billingAddressRequest).Result;
+            Assert.AreEqual(billingAddressResponse.StatusCode, HttpStatusCode.OK);
+            #endregion
+
+            #region Send Order
+            var sendOrderRequest = new RestRequest(resource: aurl4, method: Method.PUT);
+
+            var order = new
+            {
+                paymentMethod =new
+                {
+                    method = "checkmo"
+                }
+            };
+
+            var orderJson = JsonConvert.SerializeObject(order, Formatting.Indented, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+
+            sendOrderRequest.AddParameter("application/json; charset=utf-8", orderJson, ParameterType.RequestBody);
+            var sendOrderResponse = Client.ExecuteTaskAsync(sendOrderRequest).Result;
+            Assert.AreEqual(sendOrderResponse.StatusCode, HttpStatusCode.OK);
+
+            #endregion
+        }
+
+        private string Create_Guest_Cart()
+        {
+            var request = new RestRequest
+            {
+                Resource = "rest/V1/guest-carts",
+                Method = Method.POST,
+                RequestFormat = DataFormat.Json
+            };
+
+            var response = Client.ExecuteAsPost(request, "POST");
+            if (response.StatusCode == HttpStatusCode.OK)
+                return response.Content;
+            return null;
+        }
+
+        private async Task<bool> Adding_Cart_Items(string cartId = "10")
+        {
+            var request = new RestRequest
+            {
+                Resource = "rest/V1/guest-carts/5f40b8d607833642c9b2491269e8d05b/items?cartId=10",
+                Method = Method.POST
+            };
+
+            var cartItem = new
+            {
+                cartItem = new
+                {
+                    sku = "123456",
+                    qty = 2,
+                    quote_id = "10"
+                }
+            };
+
+            var jen = JsonConvert.SerializeObject(cartItem, Formatting.Indented, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+            request.AddParameter("application/json; charset=utf-8", jen, ParameterType.RequestBody);
+            var response = await Client.ExecutePostTaskAsync(request);
+            if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Created)
+                return true;
+            return false;
         }
 
         private async Task<CatalogDataProduct> GetProduct(string sku)
@@ -99,11 +270,11 @@ namespace BlackBoxModuleApi.Tests
             return response.Data;
         }
 
-        private async Task<bool> PostOrders()
+        private async Task<bool> PostOrders(string resource = "rest/V1/orders", Method method = Method.POST)
         {
-
             var product = await GetProduct("123456");
 
+            #region Address
             var sendAddress = new SalesDataOrderAddress()
             {
                 country_id = "BR",
@@ -118,21 +289,34 @@ namespace BlackBoxModuleApi.Tests
                 middlename = "Marques",
                 lastname = "Moreira",
                 email = "lmmoreira@braspag.com.br",
-                telephone = "(24)98826-3696",
+                telephone = "(24)98826-3696"
             };
+            #endregion
 
+            #region OrderItem
+            var orderItem = new SalesDataOrderItem()
+            {
+                sku = product.sku,
+                item_id = product.id,
+                price = product.price,
+                product_id = product.id,
+                product_type = product.type_id
+            };
+            #endregion
+
+            #region Entity Order
             var entity = new InlineModel()
             {
                 entity = new SalesDataOrder()
                 {
                     base_grand_total = 30,
-                    customer_id = 1,
                     customer_email = "lmmoreira@braspag.com.br",
-                    customer_firstname = "Lucas",
-                    customer_middlename = "Marques",
-                    customer_lastname = "Moreira",
-                    status = "processing",
-                    state = "processing",
+                    customer_is_guest = 1,
+                    customer_firstname = "Guest",
+                    customer_middlename = "",
+                    customer_lastname = "",
+                    status = "pending",
+                    state = "pending",
                     email_sent = 0,
                     base_currency_code = "BRL",
                     global_currency_code = "BRL",
@@ -141,20 +325,13 @@ namespace BlackBoxModuleApi.Tests
                     grand_total = 30,
                     items = new List<SalesDataOrderItem>()
                     {
-                        new SalesDataOrderItem()
-                        {
-                           sku = product.sku,
-                           item_id = product.id,
-                           price = product.price,
-                           product_id = product.id,
-                           product_type = product.type_id
-                        }
+                        orderItem
                     },
                     payment = new SalesDataOrderPayment()
                     {
                         account_status = "Approved",
                         cc_last4 = "1111",
-                        method = "banktransfer"
+                        method = "purchaseorder"
                     },
                     billing_address = sendAddress,
                     extension_attributes = new SalesDataOrderExtension()
@@ -166,34 +343,39 @@ namespace BlackBoxModuleApi.Tests
                                shipping = new SalesDataShipping()
                                {
                                    address = sendAddress
+                               }, items = new List<SalesDataOrderItem>()
+                               {
+                                   orderItem
                                }
                            }
                         }
                     }
                 }
             };
+            #endregion
 
+            #region Request
             var request = new RestRequest
             {
-                Resource = "rest/V1/orders",
-                Method = Method.POST,
+                Resource = resource,
+                Method = method,
                 RequestFormat = DataFormat.Json
             };
+            #endregion
+
+            #region Serialize Json
             var jen = JsonConvert.SerializeObject(entity, Formatting.Indented, new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore
             });
+            #endregion
 
             request.AddParameter("application/json; charset=utf-8", jen, ParameterType.RequestBody);
-
-
             var response = await Client.ExecutePostTaskAsync(request);
-
             if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.Created)
                 return true;
             return false;
         }
-
 
         private async Task<MagentoApiResponse<IList<Order>>> GetOrders()
         {
@@ -238,8 +420,6 @@ namespace BlackBoxModuleApi.Tests
             if (response.ContentType.ToUpperInvariant().Contains("APPLICATION/JSON"))
             {
                 MagentoApiResponse<T> res = new MagentoApiResponse<T>();
-
-
                 try
                 {
                     Dictionary<string, JToken> a = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(response.Content);
